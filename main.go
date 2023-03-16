@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/servers"
+
 	"github.com/Rayato159/kawaii-shop-tutorial/config"
 	"github.com/Rayato159/kawaii-shop-tutorial/pkg/databases"
 )
@@ -20,4 +22,6 @@ func main() {
 
 	db := databases.DbConnect(cfg.Db())
 	defer db.Close()
+
+	servers.NewServer(cfg, db).Start()
 }
