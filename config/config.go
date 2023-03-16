@@ -4,20 +4,11 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
 )
-
-func envPath() string {
-	if len(os.Args) == 1 {
-		return ".env"
-	} else {
-		return os.Args[1]
-	}
-}
 
 func LoadConfig(path string) IConfig {
 	envMap, err := godotenv.Read(path)
