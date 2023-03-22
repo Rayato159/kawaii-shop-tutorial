@@ -52,4 +52,12 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/signup", handler.SignUpCustomer)
 	router.Post("/signin", handler.SignIn)
 	router.Post("/refresh", handler.RefreshPassport)
+	router.Post("/signout", handler.SignOut)
+	router.Post("/signup-admin", handler.SignOut)
+
+	router.Get("/secret", handler.GenerateAdminToken)
+
+	// Initail admin ขึ้นมา 1 คน ใน Db (Insert ใน SQL)
+	// Generate Admin Key
+	// ทุกครั้งที่ทำการสมัคร Admin เพิ่ม ให้ส่ง Admin Token มาด้วยทุกครั้ง ผ่าน Middleware
 }

@@ -91,9 +91,38 @@ func (f *userReq) Customer() (IInsertUser, error) {
 }
 
 func (f *userReq) Admin() (IInsertUser, error) {
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	// defer cancel()
-	return nil, nil
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	query := `
+	INSERT INTO "users" (
+		"email",
+		"password",
+		"username",
+		"role_id"
+	)
+	VALUES
+		($1, $2, $3, 2)
+	RETURNING "id";`
+
+	if err := f.db.QueryRowContext(
+		ctx,
+		query,
+		f.req.Email,
+		f.req.Password,
+		f.req.Username,
+	).Scan(&f.id); err != nil {
+		switch err.Error() {
+		case "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)":
+			return nil, fmt.Errorf("username has been used")
+		case "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)":
+			return nil, fmt.Errorf("email has been used")
+		default:
+			return nil, fmt.Errorf("insert user failed: %v", err)
+		}
+	}
+
+	return f, nil
 }
 
 func (f *userReq) Result() (*users.UserPassport, error) {
