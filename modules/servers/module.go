@@ -1,6 +1,9 @@
 package servers
 
 import (
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/files/filesHandlers"
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/files/filesUsecases"
+
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresHandlers"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresUsecases"
@@ -22,6 +25,7 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
+	FilesModule()
 }
 
 type moduleFactory struct {
@@ -84,4 +88,13 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/apikey", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateApiKey)
 
 	router.Delete("/:category_id/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.RemoveCategory)
+}
+
+func (m *moduleFactory) FilesModule() {
+	usecase := filesUsecases.FilesUsecase(m.s.cfg)
+	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/files")
+
+	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
 }
