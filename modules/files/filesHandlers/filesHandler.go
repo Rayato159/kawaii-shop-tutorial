@@ -18,10 +18,12 @@ type filesHandlersErrCode string
 
 const (
 	uploadErr filesHandlersErrCode = "files-001"
+	deleteErr filesHandlersErrCode = "files-002"
 )
 
 type IFilesHandler interface {
 	UploadFiles(c *fiber.Ctx) error
+	DeleteFile(c *fiber.Ctx) error
 }
 
 type filesHandler struct {
@@ -47,18 +49,18 @@ func (h *filesHandler) UploadFiles(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
-	filesIn := form.File["files"]
+	filesReq := form.File["files"]
 	destination := c.FormValue("destination")
 
-	// File Validation
-	extensionMap := map[string]string{
+	// Files ext validation
+	extMap := map[string]string{
 		"png":  "png",
 		"jpg":  "jpg",
 		"jpeg": "jpeg",
 	}
-	for _, file := range filesIn {
+	for _, file := range filesReq {
 		ext := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
-		if extensionMap[ext] != ext || extensionMap[ext] == "" {
+		if extMap[ext] != ext || extMap[ext] == "" {
 			return entities.NewResponse(c).Error(
 				fiber.ErrBadRequest.Code,
 				string(uploadErr),
@@ -70,7 +72,7 @@ func (h *filesHandler) UploadFiles(c *fiber.Ctx) error {
 			return entities.NewResponse(c).Error(
 				fiber.ErrBadRequest.Code,
 				string(uploadErr),
-				fmt.Sprintf("%v", int(math.Ceil(float64(h.cfg.App().FileLimit())/math.Pow(1024, 2)))),
+				fmt.Sprintf("file size must less than %d MiB", int(math.Ceil(float64(h.cfg.App().FileLimit())/math.Pow(1024, 2)))),
 			).Res()
 		}
 
@@ -83,14 +85,33 @@ func (h *filesHandler) UploadFiles(c *fiber.Ctx) error {
 		})
 	}
 
-	// Upload
 	res, err := h.filesUsecase.UploadToGCP(req)
 	if err != nil {
 		return entities.NewResponse(c).Error(
-			fiber.ErrBadRequest.Code,
+			fiber.ErrInternalServerError.Code,
 			string(uploadErr),
 			err.Error(),
 		).Res()
 	}
 	return entities.NewResponse(c).Success(fiber.StatusCreated, res).Res()
+}
+
+func (h *filesHandler) DeleteFile(c *fiber.Ctx) error {
+	req := make([]*files.DeleteFileReq, 0)
+	if err := c.BodyParser(&req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(deleteErr),
+			err.Error(),
+		).Res()
+	}
+
+	if err := h.filesUsecase.DeleteFileOnGCP(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(deleteErr),
+			err.Error(),
+		).Res()
+	}
+	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
 }

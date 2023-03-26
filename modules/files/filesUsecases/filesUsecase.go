@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -16,81 +15,79 @@ import (
 
 type IFilesUsecase interface {
 	UploadToGCP(req []*files.FileReq) ([]*files.FileRes, error)
+	DeleteFileOnGCP(req []*files.DeleteFileReq) error
 }
 
 type filesUsecase struct {
 	cfg config.IConfig
 }
 
-type fileRes struct {
+func FilesUsecase(cfg config.IConfig) IFilesUsecase {
+	return &filesUsecase{
+		cfg: cfg,
+	}
+}
+
+type filesPub struct {
 	bucket      string
 	destination string
 	file        *files.FileRes
 }
 
-func FilesUsecase(cfg config.IConfig) IFilesUsecase {
-	return &filesUsecase{cfg: cfg}
-}
-
-func (f *fileRes) makePublic(ctx context.Context) error {
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		return fmt.Errorf("storage.NewClient: %v", err)
-	}
-	defer client.Close()
-
+func (f *filesPub) makePublic(ctx context.Context, client *storage.Client) error {
 	acl := client.Bucket(f.bucket).Object(f.destination).ACL()
 	if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
 		return fmt.Errorf("ACLHandle.Set: %v", err)
 	}
-	log.Printf("blob %v is now publicly accessible\n", f.destination)
+	fmt.Printf("Blob %v is now publicly accessible.\n", f.destination)
 	return nil
 }
 
-func (u *filesUsecase) uploadWorkers(ctx context.Context, client *storage.Client, jobs <-chan *files.FileReq, results chan<- *files.FileRes, errsCh chan<- error) {
+func (u *filesUsecase) uploadWorkers(ctx context.Context, client *storage.Client, jobs <-chan *files.FileReq, results chan<- *files.FileRes, errs chan<- error) {
 	for job := range jobs {
-		container, err := job.File.Open()
+		cotainer, err := job.File.Open()
 		if err != nil {
-			errsCh <- err
+			errs <- err
 			return
 		}
-		b, err := ioutil.ReadAll(container)
+		b, err := ioutil.ReadAll(cotainer)
 		if err != nil {
-			errsCh <- err
+			errs <- err
 			return
 		}
 
 		buf := bytes.NewBuffer(b)
 
+		// Upload an object with storage.Writer.
 		wc := client.Bucket(u.cfg.App().GCPBucket()).Object(job.Destination).NewWriter(ctx)
 
 		if _, err = io.Copy(wc, buf); err != nil {
-			errsCh <- fmt.Errorf("io.Copy: %v", err)
+			errs <- fmt.Errorf("io.Copy: %v", err)
 			return
 		}
-
+		// Data can continue to be added to the file until the writer is closed.
 		if err := wc.Close(); err != nil {
-			errsCh <- fmt.Errorf("Writer.Close: %v", err)
+			errs <- fmt.Errorf("Writer.Close: %v", err)
 			return
 		}
-		log.Printf("%v uploaded to %v\n", job.FileName, job.Destination)
+		fmt.Printf("%v uploaded to %v.\n", job.FileName, job.Extension)
 
-		newFile := &fileRes{
+		newFile := &filesPub{
 			file: &files.FileRes{
-				Url:      fmt.Sprintf("https://storage.googleapis.com/%s/%s", u.cfg.App().GCPBucket(), job.Destination),
 				FileName: job.FileName,
+				Url:      fmt.Sprintf("https://storage.googleapis.com/%s/%s", u.cfg.App().GCPBucket(), job.Destination),
 			},
-			destination: job.Destination,
 			bucket:      u.cfg.App().GCPBucket(),
+			destination: job.Destination,
 		}
 
-		if err := newFile.makePublic(ctx); err != nil {
-			errsCh <- err
+		if err := newFile.makePublic(ctx, client); err != nil {
+			errs <- err
 			return
 		}
 
+		errs <- nil
 		results <- newFile.file
-		errsCh <- nil
 	}
 }
 
@@ -110,13 +107,13 @@ func (u *filesUsecase) UploadToGCP(req []*files.FileReq) ([]*files.FileRes, erro
 
 	res := make([]*files.FileRes, 0)
 
-	for _, f := range req {
-		jobsCh <- f
+	for _, r := range req {
+		jobsCh <- r
 	}
 	close(jobsCh)
 
-	numberWorkers := 5
-	for i := 0; i < numberWorkers; i++ {
+	numWorkers := 5
+	for i := 0; i < numWorkers; i++ {
 		go u.uploadWorkers(ctx, client, jobsCh, resultsCh, errsCh)
 	}
 
@@ -131,4 +128,58 @@ func (u *filesUsecase) UploadToGCP(req []*files.FileReq) ([]*files.FileRes, erro
 	}
 
 	return res, nil
+}
+
+func (u *filesUsecase) deleteFileWorkers(ctx context.Context, client *storage.Client, jobs <-chan *files.DeleteFileReq, errs chan<- error) {
+	for job := range jobs {
+		o := client.Bucket(u.cfg.App().GCPBucket()).Object(job.Destination)
+
+		// Optional: set a generation-match precondition to avoid potential race
+		// conditions and data corruptions. The request to delete the file is aborted
+		// if the object's generation number does not match your precondition.
+		attrs, err := o.Attrs(ctx)
+		if err != nil {
+			errs <- fmt.Errorf("object.Attrs: %v", err)
+			return
+		}
+		o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
+
+		if err := o.Delete(ctx); err != nil {
+			errs <- fmt.Errorf("Object(%q).Delete: %v", job.Destination, err)
+			return
+		}
+		fmt.Printf("Blob %v deleted.\n", job.Destination)
+
+		errs <- nil
+	}
+}
+
+func (u *filesUsecase) DeleteFileOnGCP(req []*files.DeleteFileReq) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	defer cancel()
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("storage.NewClient: %v", err)
+	}
+	defer client.Close()
+
+	jobsCh := make(chan *files.DeleteFileReq, len(req))
+	errsCh := make(chan error, len(req))
+
+	for _, r := range req {
+		jobsCh <- r
+	}
+	close(jobsCh)
+
+	numWorkers := 5
+	for i := 0; i < numWorkers; i++ {
+		go u.deleteFileWorkers(ctx, client, jobsCh, errsCh)
+	}
+
+	for a := 0; a < len(req); a++ {
+		err := <-errsCh
+		return err
+	}
+	return nil
 }
