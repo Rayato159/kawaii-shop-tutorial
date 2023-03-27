@@ -8,6 +8,10 @@ import (
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresUsecases"
 
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsHandlers"
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsRepositories"
+	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsUsecases"
+
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/monitor/monitorHandlers"
 
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/users/usersHandlers"
@@ -26,6 +30,7 @@ type IModuleFactory interface {
 	UsersModule()
 	AppinfoModule()
 	FilesModule()
+	ProductsModule()
 }
 
 type moduleFactory struct {
@@ -98,4 +103,17 @@ func (m *moduleFactory) FilesModule() {
 
 	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
 	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFile)
+}
+
+func (m *moduleFactory) ProductsModule() {
+	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+
+	productsRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
+	productsUsecase := productsUsecases.ProductsUsecase(productsRepository)
+	productsHandler := productsHandlers.ProductsHandler(m.s.cfg, productsUsecase, filesUsecase)
+
+	router := m.r.Group("/products")
+
+	router.Get("/", m.mid.ApiKeyAuth(), productsHandler.FindProduct)
+	router.Get("/:product_id", m.mid.ApiKeyAuth(), productsHandler.FindOneProduct)
 }
