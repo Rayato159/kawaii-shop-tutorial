@@ -16,11 +16,13 @@ type ordersHandlersErrCode string
 const (
 	findOneOrderErr ordersHandlersErrCode = "orders-001"
 	findOrderErr    ordersHandlersErrCode = "orders-002"
+	insertOrderErr  ordersHandlersErrCode = "orders-003"
 )
 
 type IOrdersHandler interface {
 	FindOneOrder(c *fiber.Ctx) error
 	FindOrder(c *fiber.Ctx) error
+	InsertOrder(c *fiber.Ctx) error
 }
 
 type ordersHandler struct {
@@ -117,4 +119,42 @@ func (h *ordersHandler) FindOrder(c *fiber.Ctx) error {
 		fiber.StatusOK,
 		h.ordersUsecase.FindOrder(req),
 	).Res()
+}
+
+func (h *ordersHandler) InsertOrder(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(string)
+
+	req := &orders.Order{
+		Products: make([]*orders.ProductsOrder, 0),
+	}
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(insertOrderErr),
+			err.Error(),
+		).Res()
+	}
+	if len(req.Products) == 0 {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(insertOrderErr),
+			"products are empty",
+		).Res()
+	}
+	if c.Locals("userRoleId").(int) != 2 {
+		req.UserId = userId
+	}
+
+	req.Status = "waiting"
+	req.TotalPaid = 0
+
+	order, err := h.ordersUsecase.InsertOrder(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(insertOrderErr),
+			err.Error(),
+		).Res()
+	}
+	return entities.NewResponse(c).Success(fiber.StatusCreated, order).Res()
 }
