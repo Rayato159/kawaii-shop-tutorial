@@ -38,3 +38,4 @@ vendor
 *.pem
 apikey.txt
 *_test.go
+*.txt
