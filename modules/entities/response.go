@@ -34,7 +34,7 @@ func NewResponse(c *fiber.Ctx) IResponse {
 func (r *Response) Success(code int, data any) IResponse {
 	r.StatusCode = code
 	r.Data = data
-	kawaiilogger.InitKawaiiLogger(r.Context, &r.Data).Print().Save()
+	kawaiilogger.InitKawaiiLogger(r.Context, &r.Data).Print()
 	return r
 }
 func (r *Response) Error(code int, tractId, msg string) IResponse {
@@ -44,7 +44,7 @@ func (r *Response) Error(code int, tractId, msg string) IResponse {
 		Msg:     msg,
 	}
 	r.IsError = true
-	kawaiilogger.InitKawaiiLogger(r.Context, &r.ErrorRes).Print().Save()
+	kawaiilogger.InitKawaiiLogger(r.Context, &r.ErrorRes).Print()
 	return r
 }
 func (r *Response) Res() error {

@@ -1,10 +1,19 @@
-FROM golang:1.20-alpine
+FROM golang:1.20-buster AS build
 
 WORKDIR /app
 
 COPY . ./
 RUN go mod download
 
-RUN go build main.go
+RUN CGO_ENABLED=0 go build -o /bin/app
 
-CMD [ "/app/main", "/app/.env.prod"]
+## Deploy
+FROM gcr.io/distroless/static-debian11
+
+COPY --from=build /bin/app /bin
+COPY .env.prod /bin
+# COPY /assets /bin/assets
+
+EXPOSE 3000
+
+ENTRYPOINT [ "/bin/app", "/bin/.env.prod" ]
