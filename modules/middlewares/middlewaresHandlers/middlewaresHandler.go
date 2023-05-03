@@ -1,6 +1,7 @@
 package middlewaresHandlers
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/Rayato159/kawaii-shop-tutorial/config"
@@ -10,6 +11,7 @@ import (
 	"github.com/Rayato159/kawaii-shop-tutorial/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
@@ -31,6 +33,7 @@ type IMiddlewaresHandler interface {
 	ParamsCheck() fiber.Handler
 	Authorize(expectRoleId ...int) fiber.Handler
 	ApiKeyAuth() fiber.Handler
+	StreamingFile() fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -176,4 +179,11 @@ func (h *middlewaresHandler) ApiKeyAuth() fiber.Handler {
 		}
 		return c.Next()
 	}
+}
+
+// Streaming file
+func (h *middlewaresHandler) StreamingFile() fiber.Handler {
+	return filesystem.New(filesystem.Config{
+		Root: http.Dir("./assets/images"),
+	})
 }

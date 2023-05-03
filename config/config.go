@@ -123,6 +123,8 @@ type IAppConfig interface {
 	BodyLimit() int
 	FileLimit() int
 	GCPBucket() string
+	Host() string
+	Port() int
 }
 
 type app struct {
@@ -148,6 +150,8 @@ func (a *app) WriteTimeout() time.Duration { return a.writeTimeout }
 func (a *app) BodyLimit() int              { return a.bodyLimit }
 func (a *app) FileLimit() int              { return a.fileLimit }
 func (a *app) GCPBucket() string           { return a.gcpbucket }
+func (a *app) Host() string                { return a.host }
+func (a *app) Port() int                   { return a.port }
 
 type IDbConfig interface {
 	Url() string

@@ -281,9 +281,9 @@
 							]
 						},
 						"url": {
-							"raw": "{{api_url}}/users/signin",
+							"raw": "{{local_url}}/users/signin",
 							"host": [
-								"{{api_url}}"
+								"{{local_url}}"
 							],
 							"path": [
 								"users",
@@ -1115,13 +1115,13 @@
 									"key": "files",
 									"type": "file",
 									"src": [
-										"/D:/Rayato159/Anime Picture/Death Note/3dc4208dd1dfc82b46af6df33303b36e.jpg",
-										"/D:/Rayato159/Anime Picture/Death Note/9d20964a3629c917381f45c807017097.jpg"
+										"/D:/golang_but_work/hashu-resources/images/831c507f3b23607a1487cc8d0f4ea49e.jpg",
+										"/D:/golang_but_work/hashu-resources/images/a55b86bc0e3b042dd81d97bf3e8a881e.jpg"
 									]
 								},
 								{
 									"key": "destination",
-									"value": "images/products",
+									"value": "products",
 									"type": "text"
 								}
 							]
@@ -1205,7 +1205,7 @@
 					]
 				},
 				{
-					"name": "upload Copy",
+					"name": "delete",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -1332,9 +1332,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{api_url}}/products/:product_id",
+							"raw": "{{local_url}}/products/:product_id",
 							"host": [
-								"{{api_url}}"
+								"{{local_url}}"
 							],
 							"path": [
 								"products",
@@ -1503,7 +1503,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{api_url}}/products?id=&search=gadget&page=1&limit=10&order_by=title&sort=asc",
+							"raw": "{{api_url}}/products?id=&search=&page=1&limit=10&order_by=title&sort=asc",
 							"host": [
 								"{{api_url}}"
 							],
@@ -1517,7 +1517,7 @@
 								},
 								{
 									"key": "search",
-									"value": "gadget",
+									"value": "",
 									"description": "title | description"
 								},
 								{

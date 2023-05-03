@@ -93,6 +93,17 @@ func (h *filesHandler) UploadFiles(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
+
+	// If you want to upload files to your computer please use this function below instead
+
+	// res, err := h.filesUsecase.UploadToStorage(req)
+	// if err != nil {
+	// 	return entities.NewResponse(c).Error(
+	// 		fiber.ErrInternalServerError.Code,
+	// 		string(uploadErr),
+	// 		err.Error(),
+	// 	).Res()
+	// }
 	return entities.NewResponse(c).Success(fiber.StatusCreated, res).Res()
 }
 
@@ -113,5 +124,15 @@ func (h *filesHandler) DeleteFile(c *fiber.Ctx) error {
 			err.Error(),
 		).Res()
 	}
+
+	// If you want to upload files to your computer please use this function below instead
+
+	// if err := h.filesUsecase.DeleteFileOnStorage(req); err != nil {
+	// 	return entities.NewResponse(c).Error(
+	// 		fiber.ErrInternalServerError.Code,
+	// 		string(deleteErr),
+	// 		err.Error(),
+	// 	).Res()
+	// }
 	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
 }
