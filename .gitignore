@@ -37,5 +37,4 @@ vendor
 /tmp
 *.pem
 apikey.txt
-*_test.go
 *.txt

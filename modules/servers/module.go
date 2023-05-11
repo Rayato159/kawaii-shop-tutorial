@@ -1,7 +1,6 @@
 package servers
 
 import (
-	"github.com/Rayato159/kawaii-shop-tutorial/modules/files/filesHandlers"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/files/filesUsecases"
 
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/orders/ordersHandlers"
@@ -12,9 +11,7 @@ import (
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresUsecases"
 
-	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsHandlers"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsRepositories"
-	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsUsecases"
 
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/monitor/monitorHandlers"
 
@@ -33,8 +30,8 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
-	FilesModule()
-	ProductsModule()
+	FilesModule() IFilesModule
+	ProductsModule() IProductsModule
 	OrdersModule()
 }
 
@@ -79,10 +76,6 @@ func (m *moduleFactory) UsersModule() {
 
 	router.Get("/:user_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
 	router.Get("/admin/secret", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateAdminToken)
-
-	// Initail admin ขึ้นมา 1 คน ใน Db (Insert ใน SQL)
-	// Generate Admin Key
-	// ทุกครั้งที่ทำการสมัคร Admin เพิ่ม ให้ส่ง Admin Token มาด้วยทุกครั้ง ผ่าน Middleware
 }
 
 func (m *moduleFactory) AppinfoModule() {
@@ -98,35 +91,6 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/apikey", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateApiKey)
 
 	router.Delete("/:category_id/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.RemoveCategory)
-}
-
-func (m *moduleFactory) FilesModule() {
-	usecase := filesUsecases.FilesUsecase(m.s.cfg)
-	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
-
-	router := m.r.Group("/files")
-
-	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
-	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFile)
-}
-
-func (m *moduleFactory) ProductsModule() {
-	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
-
-	productsRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
-	productsUsecase := productsUsecases.ProductsUsecase(productsRepository)
-	productsHandler := productsHandlers.ProductsHandler(m.s.cfg, productsUsecase, filesUsecase)
-
-	router := m.r.Group("/products")
-
-	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.AddProduct)
-
-	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.UpdateProduct)
-
-	router.Get("/", m.mid.ApiKeyAuth(), productsHandler.FindProduct)
-	router.Get("/:product_id", m.mid.ApiKeyAuth(), productsHandler.FindOneProduct)
-
-	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.DeleteProduct)
 }
 
 func (m *moduleFactory) OrdersModule() {
