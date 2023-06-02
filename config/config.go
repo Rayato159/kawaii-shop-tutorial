@@ -81,8 +81,8 @@ func LoadConfig(path string) IConfig {
 			}(),
 		},
 		jwt: &jwt{
-			adminKey:  envMap["JWT_SECRET_KEY"],
-			secertKey: envMap["JWT_ADMIN_KEY"],
+			adminKey:  envMap["JWT_ADMIN_KEY"],
+			secertKey: envMap["JWT_SECRET_KEY"],
 			apiKey:    envMap["JWT_API_KEY"],
 			accessExpiresAt: func() int {
 				t, err := strconv.Atoi(envMap["JWT_ACCESS_EXPIRES"])

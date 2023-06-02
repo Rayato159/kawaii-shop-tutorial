@@ -1,8 +1,6 @@
 package servers
 
 import (
-	"github.com/Rayato159/kawaii-shop-tutorial/modules/files/filesUsecases"
-
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/orders/ordersHandlers"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/orders/ordersRepositories"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/orders/ordersUsecases"
@@ -10,8 +8,6 @@ import (
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresHandlers"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresRepositories"
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/middlewares/middlewaresUsecases"
-
-	"github.com/Rayato159/kawaii-shop-tutorial/modules/products/productsRepositories"
 
 	"github.com/Rayato159/kawaii-shop-tutorial/modules/monitor/monitorHandlers"
 
@@ -94,11 +90,8 @@ func (m *moduleFactory) AppinfoModule() {
 }
 
 func (m *moduleFactory) OrdersModule() {
-	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
-	productsRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
-
 	ordersRepository := ordersRepositories.OrdersRepository(m.s.db)
-	ordersUsecase := ordersUsecases.OrdersUsecase(ordersRepository, productsRepository)
+	ordersUsecase := ordersUsecases.OrdersUsecase(ordersRepository, m.ProductsModule().Repository())
 	ordersHandler := ordersHandlers.OrdersHandler(m.s.cfg, ordersUsecase)
 
 	router := m.r.Group("/orders")
