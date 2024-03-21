@@ -25,9 +25,5 @@ func (u *middlewaresUsecase) FindAccessToken(userId, accessToken string) bool {
 }
 
 func (u *middlewaresUsecase) FindRole() ([]*middlewares.Role, error) {
-	roles, err := u.middlewaresRepository.FindRole()
-	if err != nil {
-		return nil, err
-	}
-	return roles, nil
+	return u.middlewaresRepository.FindRole()
 }

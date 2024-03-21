@@ -27,11 +27,7 @@ func ProductsUsecase(productsRepository productsRepositories.IProductsRepository
 }
 
 func (u *productsUsecase) FindOneProduct(productId string) (*products.Product, error) {
-	product, err := u.productsRepository.FindOneProduct(productId)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
+	return u.productsRepository.FindOneProduct(productId)
 }
 
 func (u *productsUsecase) FindProduct(req *products.ProductFilter) *entities.PaginateRes {
@@ -47,24 +43,13 @@ func (u *productsUsecase) FindProduct(req *products.ProductFilter) *entities.Pag
 }
 
 func (u *productsUsecase) AddProduct(req *products.Product) (*products.Product, error) {
-	product, err := u.productsRepository.InsertProduct(req)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
+	return u.productsRepository.InsertProduct(req)
 }
 
 func (u *productsUsecase) DeleteProduct(productId string) error {
-	if err := u.productsRepository.DeleteProduct(productId); err != nil {
-		return err
-	}
-	return nil
+	return u.productsRepository.DeleteProduct(productId)
 }
 
 func (u *productsUsecase) UpdateProduct(req *products.Product) (*products.Product, error) {
-	product, err := u.productsRepository.UpdateProduct(req)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
+	return u.productsRepository.UpdateProduct(req)
 }

@@ -30,15 +30,9 @@ func (u *appinfoUsecase) FindCategory(req *appinfo.CategoryFilter) ([]*appinfo.C
 }
 
 func (u *appinfoUsecase) InsertCategory(req []*appinfo.Category) error {
-	if err := u.appinfoRepository.InsertCategory(req); err != nil {
-		return err
-	}
-	return nil
+	return u.appinfoRepository.InsertCategory(req)
 }
 
 func (u *appinfoUsecase) DeleteCategory(categoryId int) error {
-	if err := u.appinfoRepository.DeleteCategory(categoryId); err != nil {
-		return err
-	}
-	return nil
+	return u.appinfoRepository.DeleteCategory(categoryId)
 }

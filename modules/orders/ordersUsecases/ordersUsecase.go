@@ -31,11 +31,7 @@ func OrdersUsecase(ordersRepository ordersRepositories.IOrdersRepository, produc
 }
 
 func (u *ordersUsecase) FindOneOrder(orderId string) (*orders.Order, error) {
-	order, err := u.ordersRepository.FindOneOrder(orderId)
-	if err != nil {
-		return nil, err
-	}
-	return order, nil
+	return u.ordersRepository.FindOneOrder(orderId)
 }
 
 func (u *ordersUsecase) FindOrder(req *orders.OrderFilter) *entities.PaginateRes {
